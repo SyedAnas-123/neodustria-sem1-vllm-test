@@ -1,0 +1,30 @@
+models:
+  # 1. Automotive Model
+  - id: neodustria-auto-engineer-v0
+    hf_repo: "meta-llama/Meta-Llama-3-8B-Instruct"
+    revision: "main"  
+    quantization: "awq"
+    max_tokens: 2048
+    gpu_memory: "20GB"
+    domain: "automotive"
+    role: "reasoning"
+
+  # 2. Construction Model
+  - id: neodustria-const-engineer-v0
+    hf_repo: "allenai/OLMo-7B-Instruct"
+    revision: "main"
+    quantization: "awq"
+    max_tokens: 2048
+    gpu_memory: "20GB"
+    domain: "construction"
+    role: "reasoning"
+
+  # 3. General Fallback Model
+  - id: neodustria-general-v0
+    hf_repo: "mistralai/Mistral-7B-Instruct-v0.3"
+    revision: "main"
+    quantization: "awq"
+    max_tokens: 2048
+    gpu_memory: "16GB"
+    domain: "general"
+    role: "fallback"

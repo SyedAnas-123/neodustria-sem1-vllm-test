@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+vllm
+prometheus-client
+pyyaml
+boto3
+httpx
+python-dotenv
