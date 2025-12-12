@@ -1,7 +1,7 @@
 models:
   # 1. Automotive Model
   - id: neodustria-auto-engineer-v0
-    hf_repo: "meta-llama/Meta-Llama-3-8B-Instruct"
+    hf_repo: "neodustria/llama3-8b-auto-base"
     revision: "main"  
     quantization: "awq"
     max_tokens: 2048
@@ -11,7 +11,7 @@ models:
 
   # 2. Construction Model
   - id: neodustria-const-engineer-v0
-    hf_repo: "allenai/OLMo-7B-Instruct"
+    hf_repo: "Qwen/Qwen2.5-7B-Instruct"
     revision: "main"
     quantization: "awq"
     max_tokens: 2048
