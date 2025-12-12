@@ -13,10 +13,10 @@ class ModelConfig(BaseModel):
     id: str
     hf_repo: str
     revision: str
-    quantization: str = None
-    max_tokens: int = 512
-    domain: str = "general"
-    role: str = "fallback"
+    quantization: str 
+    max_tokens: int 
+    domain: str  
+    role: str 
 
 class LLMConfig(BaseModel):
     models: List[ModelConfig]
@@ -35,6 +35,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "allow"   # it allows extra env variables and doesnot conflicts 
 
 settings = Settings()
 
