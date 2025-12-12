@@ -28,11 +28,17 @@ def get_llm(model_id: str):
 
     # 3. Real Mode: Initialize vLLM
     # Note: On the GPU server, this will download 15GB weights!
-    llm = LLM(
-        model=cfg.hf_repo,
-        revision=cfg.revision,
-        trust_remote_code=True
-    )
+    llm_kwargs = {
+        "model": cfg.hf_repo,
+        "revision": cfg.revision,
+        "trust_remote_code": True,
+    }
+
+    # 👉 pass quantization mode if defined in models.yaml (e.g. "awq", "gptq")
+    if getattr(cfg, "quantization", None):
+        llm_kwargs["quantization"] = cfg.quantization
+
+    llm = LLM(**llm_kwargs)
     return llm, cfg
 
 def generate(model_id: str, prompt: str, max_tokens: int = 512) -> str:
