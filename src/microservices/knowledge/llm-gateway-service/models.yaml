@@ -3,7 +3,7 @@ models:
   - id: neodustria-auto-engineer-v0
     hf_repo: "neodustria/llama3-8b-auto-base"
     revision: "main"  
-    quantization: "awq"
+    quantization: null   # No quantization --> for Quantization use awq
     max_tokens: 2048
     gpu_memory: "20GB"
     domain: "automotive"
@@ -13,7 +13,7 @@ models:
   - id: neodustria-const-engineer-v0
     hf_repo: "Qwen/Qwen2.5-7B-Instruct"
     revision: "main"
-    quantization: "awq"
+    quantization: none
     max_tokens: 2048
     gpu_memory: "20GB"
     domain: "construction"
@@ -23,7 +23,7 @@ models:
   - id: neodustria-general-v0
     hf_repo: "mistralai/Mistral-7B-Instruct-v0.3"
     revision: "main"
-    quantization: "awq"
+    quantization: none
     max_tokens: 2048
     gpu_memory: "16GB"
     domain: "general"
