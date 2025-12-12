@@ -1,5 +1,6 @@
 # llm_gateway/models.py
 
+# llm_gateway/models.py
 
 from functools import lru_cache
 from .config import load_config, ModelConfig, settings
@@ -27,16 +28,16 @@ def get_llm(model_id: str):
         return None, cfg
 
     # 3. Real Mode: Initialize vLLM
-    # Note: On the GPU server, this will download 15GB weights!
+    # Note: On the GPU server, this will download full-precision weights!
     llm_kwargs = {
         "model": cfg.hf_repo,
         "revision": cfg.revision,
         "trust_remote_code": True,
     }
 
-    # 👉 pass quantization mode if defined in models.yaml (e.g. "awq", "gptq")
-    if getattr(cfg, "quantization", None):
-        llm_kwargs["quantization"] = cfg.quantization
+    # ❌ Quantization temporarily disabled to avoid vLLM AWQ config error
+    # if getattr(cfg, "quantization", None):
+    #     llm_kwargs["quantization"] = cfg.quantization
 
     llm = LLM(**llm_kwargs)
     return llm, cfg
