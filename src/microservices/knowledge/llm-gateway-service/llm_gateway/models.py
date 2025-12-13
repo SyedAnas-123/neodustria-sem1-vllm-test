@@ -1,8 +1,7 @@
 # llm_gateway/models.py
 
-# llm_gateway/models.py
-
 from functools import lru_cache
+import os  # ✅ add this
 from .config import load_config, ModelConfig, settings
 
 # Load catalog on startup
@@ -26,6 +25,11 @@ def get_llm(model_id: str):
     # 2. If Fake Mode, return nothing (bypass heavy load)
     if settings.USE_FAKE_LLM:
         return None, cfg
+
+    # vLLM can see the token in this system environment and authenticate with Hugging Face to download your private mode
+    if getattr(settings, "HUGGINGFACE_HUB_TOKEN", None):
+        os.environ["HF_TOKEN"] = settings.HUGGINGFACE_HUB_TOKEN
+        os.environ["HUGGINGFACE_HUB_TOKEN"] = settings.HUGGINGFACE_HUB_TOKEN
 
     # 3. Real Mode: Initialize vLLM
     # Note: On the GPU server, this will download full-precision weights!
