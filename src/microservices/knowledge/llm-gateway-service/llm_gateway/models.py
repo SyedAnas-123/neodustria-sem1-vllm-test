@@ -35,7 +35,7 @@ def get_llm(model_id: str):
         "trust_remote_code": True,
     }
 
-    # ❌ Quantization temporarily disabled to avoid vLLM AWQ config error
+    # Quantization temporarily disabled to avoid vLLM AWQ config error
     # if getattr(cfg, "quantization", None):
     #     llm_kwargs["quantization"] = cfg.quantization
 

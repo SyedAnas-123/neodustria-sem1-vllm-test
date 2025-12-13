@@ -1,6 +1,5 @@
 # llm_gateway/routers/completion.py
 
-
 import time
 import uuid
 from fastapi import APIRouter, HTTPException, Header
