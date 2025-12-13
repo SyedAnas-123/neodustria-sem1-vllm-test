@@ -13,7 +13,7 @@ class ModelConfig(BaseModel):
     id: str
     hf_repo: str
     revision: str
-    quantization: Optional[str] = None  # either a string or a null
+    quantization: Optional[str] = None  # either a string or a null 
     max_tokens: int 
     domain: str  
     role: str 
@@ -27,11 +27,14 @@ class Settings(BaseSettings):
     Reads from environment variables automatically.
     """
     # Single URI for the registry
-    MODELS_REGISTRY_S3_URI: str = "s3://neodustria-llm-catalog-staging/models.yaml"
-    
+    MODELS_REGISTRY_S3_URI: str
     # Deployment settings
     VLLM_PORT: int = 8205
     USE_FAKE_LLM: bool = False  # Set to True for local dev or to use fake llm locally
+    # Scaleway endpoint
+    S3_ENDPOINT_URL: str
+    # Hugging Face token for private model(llama)
+    HUGGINGFACE_HUB_TOKEN: Optional[str] = None
 
     class Config:
         env_file = ".env"
@@ -56,7 +59,7 @@ def load_config() -> LLMConfig:
             key = parsed.path.lstrip("/")
             
             # Use Scaleway endpoint if configured
-            endpoint = os.getenv("S3_ENDPOINT_URL", "https://s3.fr-par.scw.cloud")
+            endpoint = settings.S3_ENDPOINT_URL
             s3 = boto3.client("s3", endpoint_url=endpoint)
             
             obj = s3.get_object(Bucket=bucket, Key=key)
