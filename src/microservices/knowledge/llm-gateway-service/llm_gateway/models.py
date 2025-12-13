@@ -26,7 +26,8 @@ def get_llm(model_id: str):
     if settings.USE_FAKE_LLM:
         return None, cfg
 
-    # vLLM can see the token in this system environment and authenticate with Hugging Face to download your private mode
+    # vLLM can see the token in this system environment and authenticate with Hugging Face to download your private mode 
+    # This part injects the token from your settings into the system environment so vLLM can "see" it and download the private model
     if getattr(settings, "HUGGINGFACE_HUB_TOKEN", None):
         os.environ["HF_TOKEN"] = settings.HUGGINGFACE_HUB_TOKEN
         os.environ["HUGGINGFACE_HUB_TOKEN"] = settings.HUGGINGFACE_HUB_TOKEN
