@@ -21,5 +21,8 @@ COPY models.yaml .
 # 7. Expose the port
 EXPOSE 8205
 
-# 8. Run the app
+# 8. Reset the entrypoint to allow custom commands
+ENTRYPOINT []
+
+# 9. Run the app
 CMD ["uvicorn", "llm_gateway.main:app", "--host", "0.0.0.0", "--port", "8205"]
