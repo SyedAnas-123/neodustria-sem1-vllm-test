@@ -2,7 +2,7 @@
 
 from pydantic_settings import BaseSettings
 from pydantic import BaseModel
-from typing import List
+from typing import List ,  Optional
 import yaml
 import boto3
 from urllib.parse import urlparse
@@ -13,7 +13,7 @@ class ModelConfig(BaseModel):
     id: str
     hf_repo: str
     revision: str
-    quantization: str 
+    quantization: Optional[str] = None  # either a string or a null
     max_tokens: int 
     domain: str  
     role: str 
