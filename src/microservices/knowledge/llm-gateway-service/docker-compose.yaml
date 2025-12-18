@@ -1,1 +1,268 @@
 
+services:
+  # ----------------- Infrastructure Services -----------------
+  postgres:
+    image: postgres:15
+    container_name: ontology-postgres
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: neodustria2025
+      POSTGRES_DB: ontologies
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./src/microservices/knowledge/graphdb-service/config:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 15s
+      retries: 30
+    networks:
+      - knowledge-network
+    restart: unless-stopped
+
+  graphdb:
+    image: platform-graphdb-service:latest
+    build:
+      context: ./src/microservices/knowledge/graphdb-service
+      dockerfile: Dockerfile
+    container_name: ontology-graphdb
+    ports:
+      - "7200:7200"
+    volumes:
+      - graphdb-data:/opt/graphdb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7200/rest/repositories"]
+      interval: 10s
+      timeout: 15s
+      retries: 30
+    networks:
+      - knowledge-network
+    restart: unless-stopped
+
+  metabase:
+    image: platform-metabase-service:latest
+    build:
+      context: ./src/microservices/knowledge/metabase-service
+      dockerfile: Dockerfile
+    container_name: ontology-metabase
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3001:3000"
+    volumes:
+      - metabase-data:/metabase.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 15s
+      retries: 30
+    networks:
+      - knowledge-network
+    restart: unless-stopped
+
+  ollama:
+    image: platform-ollama-service:latest
+    build:
+      context: ./src/microservices/knowledge/ollama-service
+      dockerfile: Dockerfile
+    ports:
+      - "7869:11434"
+    volumes:
+      - ~/.ollama:/root/.ollama
+    container_name: ollama
+    tty: true
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_MODELS=mistral:latest,all-minilm:latest
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/"]
+      interval: 10s
+      timeout: 15s
+      retries: 30
+    networks:
+      - knowledge-network
+    restart: unless-stopped
+
+  # ----------------- Knowledge Services -----------------
+  ontology-loader:
+    build:
+      context: ./src/microservices/knowledge/ontology-loader-service
+      dockerfile: Dockerfile
+    container_name: ontology-loader
+    depends_on:
+      postgres:
+        condition: service_healthy
+      graphdb:
+        condition: service_healthy
+    ports:
+      - "8200:8000"
+    env_file:
+      - ./src/microservices/knowledge/ontology-loader-service/.env
+    volumes:
+      - ./src/microservices/knowledge/shared/data/ontologies:/app/data/ontologies
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/owlloader/v1/health"]
+      interval: 10s
+      timeout: 15s
+      retries: 30
+    networks:
+      - knowledge-network
+    restart: unless-stopped
+
+  ontology-service:
+    build:
+      context: ./src/microservices/knowledge
+      dockerfile: ontology-service/Dockerfile
+    container_name: ontology-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8201:8080"
+    env_file:
+      - ./src/microservices/knowledge/ontology-service/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/ontology-service/v1/health"]
+      interval: 10s
+      timeout: 15s
+      retries: 30
+    networks:
+      - knowledge-network
+    restart: unless-stopped
+
+  knowledge-query-api:
+    build:
+      context: ./src/microservices/knowledge
+      dockerfile: knowledge-query-service/Dockerfile
+    container_name: knowledge-query-api
+    depends_on:
+      graphdb:
+        condition: service_healthy
+    ports:
+      - "8202:8081"
+    env_file:
+      - ./src/microservices/knowledge/knowledge-query-service/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/knowledge/v1/health"]
+      interval: 10s
+      timeout: 15s
+      retries: 30
+    networks:
+      - knowledge-network
+    restart: unless-stopped
+
+  vectorization-api:
+    build:
+      context: ./src/microservices/knowledge/vectorization-service
+      dockerfile: Dockerfile
+    container_name: vectorization-api
+    depends_on:
+      knowledge-query-api:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    ports:
+      - "8203:8082"
+    env_file:
+      - ./src/microservices/knowledge/vectorization-service/.env
+    volumes:
+      - ./src/microservices/knowledge/shared/data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/vectorization/v1/health"]
+      interval: 10s
+      timeout: 15s
+      retries: 30
+    networks:
+      - knowledge-network
+    restart: unless-stopped
+
+  orchestrator-service:
+    build:
+      context: ./src/microservices/knowledge
+      dockerfile: orchestrator-service/Dockerfile
+    container_name: orchestrator-service
+    depends_on:
+      knowledge-query-api:
+        condition: service_healthy
+      vectorization-api:
+        condition: service_healthy
+    ports:
+      - "8204:8083"
+    env_file:
+      - ./src/microservices/knowledge/orchestrator-service/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/orchestrator/v1/health"]
+      interval: 10s
+      timeout: 15s
+      retries: 30
+    networks:
+      - knowledge-network
+    restart: unless-stopped
+
+  knowledge-agent:
+    build:
+      context: ./src/microservices/knowledge/knowledge-agent-service
+      dockerfile: Dockerfile
+    container_name: knowledge-agent
+    depends_on:
+      ollama:
+        condition: service_healthy
+      orchestrator-service:
+        condition: service_healthy
+    ports:
+      - "8205:8084"
+    env_file:
+      - ./src/microservices/knowledge/knowledge-agent-service/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/knowledge-agent/v1/health"]
+      interval: 10s
+      timeout: 15s
+      retries: 30
+    networks:
+      - knowledge-network
+    restart: unless-stopped
+
+  llm-gateway-service:
+    image: platform-llm-gateway-service:latest
+    build:
+      context: ./src/microservices/knowledge/llm-gateway-service
+      dockerfile: Dockerfile
+    container_name: llm-gateway-service
+    # Mapping Host Port 8206 to Container Port 8205
+    ports:
+      - "8206:8205"
+    env_file:
+      - ./src/microservices/knowledge/llm-gateway-service/.env
+    # Explicitly pass the token for standard HF libraries
+    environment:
+      - HF_TOKEN=${HUGGINGFACE_HUB_TOKEN}
+    volumes:
+      # This saves the model weights so they persist between restarts
+      - hf-cache:/root/.cache/huggingface
+    networks:
+      - knowledge-network
+    restart: unless-stopped
+    # GPU Configuration (Standard V2 Syntax)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  
+
+volumes:
+  pgdata:
+  metabase-data:
+  graphdb-data:
+  hf-cache:
+
+networks:
+  knowledge-network:
+    driver: bridge
